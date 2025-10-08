@@ -74,8 +74,8 @@ final class CollectionViewDataSource: NSObject {
   ///
   ///   coordinator.drop(firstItem.dragItem, toRowAt: destinationIndexPath)
   ///
-  func modifySectionsWithoutUpdating(_ sections: [SectionModel]) {
-    data = .make(sections: sections)
+  func applyDataWithoutCalculatingDifference(_ newData: CollectionViewData) {
+    data = newData
   }
 
   // MARK: Private

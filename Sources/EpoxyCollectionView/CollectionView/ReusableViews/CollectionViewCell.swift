@@ -29,13 +29,13 @@ public final class CollectionViewCell: UICollectionViewCell, ItemCellView {
 
   override public var isSelected: Bool {
     didSet {
-      updateVisualHighlightState(isSelected)
+      updateVisualHighlightState(isSelected || isHighlighted)
     }
   }
 
   override public var isHighlighted: Bool {
     didSet {
-      updateVisualHighlightState(isHighlighted)
+      updateVisualHighlightState(isSelected || isHighlighted)
     }
   }
 

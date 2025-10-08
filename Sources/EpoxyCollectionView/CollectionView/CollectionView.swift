@@ -504,39 +504,9 @@ open class CollectionView: UICollectionView {
     guard !updateState.isUpdating else {
       switch update {
         case .automatic:
-          queuedUpdate = update
-        case .manual(newData: let newData, performBatchUpdates: let performBatchUpdates):
-          switch queuedUpdate {
-            case .automatic(let oldData, let strategy):
-              queuedUpdate = .manual(
-                newData: epoxyDataSource.data ?? .make(sections: []),
-                performBatchUpdates: {
-                  self.performUpdates(
-                    data: oldData,
-                    animated: strategy.animated
-                  )
-                  
-                  self.queuedUpdate = .manual(
-                    newData: newData,
-                    performBatchUpdates: performBatchUpdates
-                  )
-                }
-              )
-            case .manual(let oldData, let oldPerformBatchUpdates):
-              queuedUpdate = .manual(
-                newData: oldData,
-                performBatchUpdates: {
-                  oldPerformBatchUpdates()
-                  
-                  self.queuedUpdate = .manual(
-                    newData: newData,
-                    performBatchUpdates: performBatchUpdates
-                  )
-                }
-              )
-            case nil:
-              queuedUpdate = update
-          }
+          queuedUpdates = [update]
+        case .manual:
+          queuedUpdates.append(update)
       }
       return
     }
@@ -580,7 +550,7 @@ open class CollectionView: UICollectionView {
   private let epoxyDataSource: CollectionViewDataSource
   private let configuration: CollectionViewConfiguration
 
-  private var queuedUpdate: CollectionViewUpdate?
+  private var queuedUpdates: [CollectionViewUpdate] = []
 
   private var updateState = UpdateState.notUpdating
   private var ephemeralStateCache = [AnyHashable: Any?]()
@@ -622,16 +592,17 @@ open class CollectionView: UICollectionView {
               newData: let data,
               performBatchUpdates: let performBatchUpdates
             ):
-              let oldData = self.epoxyDataSource.data ?? .make(sections: [])
-              self.epoxyDataSource.modifySectionsWithoutUpdating(data.sections)
-              self.updateState = .updating(from: oldData)
               performBatchUpdates()
+              
+              let oldData = self.epoxyDataSource.data ?? .make(sections: [])
+              self.epoxyDataSource.applyDataWithoutCalculatingDifference(data)
+              self.updateState = .updating(from: oldData)
           }
         },
         completion: { _ in
-          if let nextUpdate = self.queuedUpdate,
+          if !self.queuedUpdates.isEmpty,
              self.window != nil {
-            self.queuedUpdate = nil
+            let nextUpdate = self.queuedUpdates.removeFirst()
             self.updateView(with: nextUpdate)
           } else {
             self.completeUpdates()
@@ -667,10 +638,15 @@ open class CollectionView: UICollectionView {
       case .manual(newData: let data, performBatchUpdates: _):
         if initialDataNotLoaded {
           let oldData = epoxyDataSource.data ?? .make(sections: [])
-          epoxyDataSource.modifySectionsWithoutUpdating(data.sections)
+          epoxyDataSource.applyDataWithoutCalculatingDifference(data)
           updateState = .updating(from: oldData)
           reloadData()
-          completeUpdates()
+          if !self.queuedUpdates.isEmpty {
+            let nextUpdate = self.queuedUpdates.removeFirst()
+            self.updateView(with: nextUpdate)
+          } else {
+            self.completeUpdates()
+          }
         } else {
           performUpdates()
         }

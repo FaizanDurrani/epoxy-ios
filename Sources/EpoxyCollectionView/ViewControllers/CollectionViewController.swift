@@ -10,6 +10,7 @@ import UIKit
 /// To update the sections of this view controller, call `setSections(_:animated:)` with a new array
 /// of `SectionModel`s modeling the new content.
 open class CollectionViewController: UIViewController {
+  public let keyboardPositionWatcher = KeyboardPositionWatcher()
 
   // MARK: Lifecycle
 
@@ -162,6 +163,10 @@ open class CollectionViewController: UIViewController {
       collectionView.setSections(sections, animated: false)
       initialSections = nil
     }
+    
+    self.keyboardPositionWatcher.adjustBottomContentInset(
+      of: collectionView
+    )
 
     return collectionView
   }

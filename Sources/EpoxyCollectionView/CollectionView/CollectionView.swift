@@ -717,6 +717,20 @@ open class CollectionView: UICollectionView {
           with: .init(traitCollection: traitCollection, state: cell.state, animated: false))
       }
     }
+    
+    for elementKind in epoxyDataSource.supplementaryViewElementKinds {
+      for indexPath in indexPathsForVisibleSupplementaryElements(ofKind: elementKind) {
+        if
+          let reusableView = supplementaryView(forElementKind: elementKind, at: indexPath) as? CollectionViewReusableView,
+          let item = epoxyDataSource.data?.supplementaryItem(ofKind: elementKind, at: indexPath)
+        {
+          item.setBehavior(
+            reusableView: reusableView,
+            traitCollection: traitCollection,
+            animated: false)
+        }
+      }
+    }
   }
 
   private func completeUpdates() {
